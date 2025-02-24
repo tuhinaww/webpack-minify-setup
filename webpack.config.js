@@ -1,8 +1,11 @@
 const path = require("path");
+const glob = require("glob");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
 const TerserPlugin = require("terser-webpack-plugin");
 const { CleanWebpackPlugin } = require("clean-webpack-plugin");
+
+const htmlFiles = glob.sync("./src/**/*.html");
 
 module.exports = {
   mode: "production",
@@ -17,17 +20,24 @@ module.exports = {
   },
   plugins: [
     new CleanWebpackPlugin(),
-    new MiniCssExtractPlugin({ filename: "css/[name].[contenthash].min.css" }), // ✅ Ensure CSS is extracted
-    new HtmlWebpackPlugin({
-      template: "./src/index.html",
-      minify: { collapseWhitespace: true, removeComments: true },
+    new MiniCssExtractPlugin({ filename: "css/[name].[contenthash].min.css" }),
+
+    ...htmlFiles.map((file) => {
+      return new HtmlWebpackPlugin({
+        filename: path.relative("./src", file), 
+        template: file,
+        minify: {
+          collapseWhitespace: true,
+          removeComments: true,
+        },
+      });
     }),
   ],
   module: {
     rules: [
       {
         test: /\.css$/,
-        use: [MiniCssExtractPlugin.loader, "css-loader"], // ✅ Extracts CSS properly
+        use: [MiniCssExtractPlugin.loader, "css-loader"],
       },
       {
         test: /\.js$/,
